@@ -1,0 +1,63 @@
+- name: ETCD - create etcd group
+  group:
+    name: etcd
+    system: yes
+    state: present
+- name: ETCD - create etcd user
+  user:
+    name: etcd
+    groups: etcd
+    append: yes
+    system: yes
+- name: ETCD - ensure dirs
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: etcd
+    group: etcd
+    mode: '0755'
+  with_items: 
+    - /etc/etcd
+    - /var/log/etcd
+    - "{{ etcd_data_dir }}"
+    - "{{ etcd_wal_dir }}"
+- name: ETCD - etcd path stat
+  stat:
+    path: /opt/etcd/
+  register: etcd_path_stat_result
+- block:
+  - name: ETCD - download etcd
+    get_url:
+      url: https://github.com/etcd-io/etcd/releases/download/{{ etcd_version }}/etcd-{{ etcd_version }}-linux-amd64.tar.gz
+      dest: /tmp
+  - name: ETCD - unarchive etcd
+    unarchive:
+      src: /tmp/etcd-{{ etcd_version }}-linux-amd64.tar.gz
+      dest: /opt
+      remote_src: yes
+      owner: etcd
+      group: etcd
+  when: not etcd_path_stat_result.stat.exists
+- name: ETCD - link etcd home
+  file:
+    src: /opt/etcd-{{ etcd_version }}-linux-amd64
+    dest: "{{ etcd_home }}"
+    owner: etcd
+    group: etcd
+    state: link
+- name: ETCD - copy config files
+  template:
+    src: etcd.conf.yml.j2
+    dest: /etc/etcd/etcd.conf.yml
+    owner: etcd
+    group: etcd
+    mode: '0644'
+  notify: restart etcd
+- name: ETCD - etcd service
+  template:
+    src: etcd.service.j2
+    dest: /etc/systemd/system/etcd.service
+    owner: root
+    group: root
+    mode: 0644
+  notify: restart etcd

@@ -1,0 +1,15 @@
+[Unit]
+Description=etcd
+After=network-online.target
+
+[Service]
+Type=simple
+User=etcd
+Group=etcd
+Environment=ETCD_CONFIG_FILE=/etc/etcd/etcd.conf.yml
+ExecStart={{ etcd_home }}/etcd
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

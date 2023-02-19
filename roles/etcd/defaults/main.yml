@@ -1,0 +1,6 @@
+---
+etcd_version: v3.5.7
+etcd_home: /opt/etcd
+
+etcd_data_dir: /data/etcd/data
+etcd_wal_dir: /data/etcd/wal
